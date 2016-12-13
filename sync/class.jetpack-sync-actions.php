@@ -183,15 +183,16 @@ class Jetpack_Sync_Actions {
 
 	static function do_initial_sync( $new_version = null, $old_version = null ) {
 		$initial_sync_config = self::get_update_full_sync_config();
-
+		$include_users = false;
 		if ( $old_version && ( version_compare( $old_version, '4.2', '<' ) ) ) {
 			$initial_sync_config['users'] = 'initial';
+			$include_users = true;
 		}
 
 		if ( is_multisite()  ) {
 			// stagger initial syncs for multisite blogs so they don't all pile on top of each other
 			if ( is_main_site() ) {
-				self::schedule_full_sync_multisite();
+				wp_schedule_single_event( time() , 'jetpack_sync_update_multisite_cron', $include_users );
 			}
 		} else {
 			self::do_full_sync( $initial_sync_config );
@@ -206,43 +207,32 @@ class Jetpack_Sync_Actions {
 			'constants' => true,
 		);
 	}
-
-	static function schedule_full_sync_multisite(  ) {
-		wp_schedule_single_event( time() , 'jetpack_sync_update_multisite_cron' );
-	}
 	
-	static function update_multisite_full_sync( $offset = 0 ) {
-		$batch = 20;
+	static function update_multisite_full_sync( $include_users ) {
+		global $wpdb;
 
-		// doesn't exist pre 4.6
-		if ( function_exists( 'get_sites' ) ) {
-			$args     = array(
-				'network_id' => get_current_network_id(),
-				'spam'       => 0,
-				'deleted'    => 0,
-				'archived'   => 0,
-				'number'     => $batch,
-				'offset'     => $offset,
-				'fields'     => 'ids',
-				'order'      => 'DESC',
-				'orderby'    => 'id',
-			);
-			$site_ids = get_sites( $args );
-		} else  {
-			global $wpdb;
+		$initial_sync_config = self::get_update_full_sync_config();
+		if ( $include_users ) {
+			$initial_sync_config['users'] = 'initial';
+		}
+
+		$batch = 500;
+		$continue = true;
+
+		while( $continue ) {
 			$site_ids = $wpdb->get_results( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY registered DESC LIMIT {$offset}, {$batch}", ARRAY_A );
-		}
-		
-		foreach ( (array) $site_ids as $site_id ) {
-			switch_to_blog( $site_id );
-			if ( self::sync_allowed() ) {
-				self::do_full_sync( self::get_update_full_sync_config() );
+			foreach ( (array) $site_ids as $site_id ) {
+				switch_to_blog( $site_id );
+				if ( self::sync_allowed() ) {
+					self::do_full_sync( $initial_sync_config );
+				}
+				restore_current_blog();
 			}
-			restore_current_blog();
-		}
 
-		if ( count( $site_ids ) === $batch ) {
-			self::update_multisite_full_sync( $offset + $batch );
+			if ( count( $site_ids ) !== $batch ) {
+				$continue = false;
+				$offset   = $offset + $batch;
+			}
 		}
 	}
 
