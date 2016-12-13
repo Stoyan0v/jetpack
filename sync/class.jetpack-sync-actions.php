@@ -210,7 +210,6 @@ class Jetpack_Sync_Actions {
 	
 	static function update_multisite_full_sync( $include_users ) {
 		global $wpdb;
-
 		$initial_sync_config = self::get_update_full_sync_config();
 		if ( $include_users ) {
 			$initial_sync_config['users'] = 'initial';
@@ -222,21 +221,18 @@ class Jetpack_Sync_Actions {
 
 		while( $continue ) {
 
-			$site_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY registered DESC LIMIT {$offset}, {$batch}" );
-			error_log( print_r( $site_ids ,1 ));
-
+			$site_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY blog_id DESC LIMIT {$offset}, {$batch}" );
+		
 			foreach ( (array) $site_ids as $site_id ) {
 				switch_to_blog( $site_id );
-				if ( self::sync_allowed() ) {
-					self::do_full_sync( $initial_sync_config );
-				}
+				self::do_full_sync( $initial_sync_config );
 				restore_current_blog();
 			}
 
 			if ( count( $site_ids ) !== $batch ) {
-				$continue = false;
-				$offset   = $offset + $batch;
+				break;
 			}
+			$offset   = $offset + $batch;
 		}
 	}
 
