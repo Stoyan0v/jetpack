@@ -208,7 +208,7 @@ class Jetpack_Sync_Actions {
 		);
 	}
 	
-	static function update_multisite_full_sync( $include_users ) {
+	static function update_multisite_full_sync( $include_users = false ) {
 		global $wpdb;
 		$initial_sync_config = self::get_update_full_sync_config();
 		if ( $include_users ) {
