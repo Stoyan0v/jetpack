@@ -26,7 +26,7 @@ class Jetpack_Sync_Actions {
 			wp_clear_scheduled_hook( 'jetpack_sync_full_cron' );
 		}
 		if ( is_multisite() ) {
-			add_action( 'jetpack_sync_update_multisite_cron', array( __CLASS__, 'update_multisite_full_sync' ), 10, 1 );
+			add_action( 'jetpack_full_sync_on_multisite_jetpack_upgrade_cron', array( __CLASS__, 'full_sync_on_multisite_jetpack_upgrade' ), 10, 1 );
 		}
 		
 
@@ -192,7 +192,7 @@ class Jetpack_Sync_Actions {
 		if ( is_multisite()  ) {
 			// stagger initial syncs for multisite blogs so they don't all pile on top of each other
 			if ( is_main_site() ) {
-				wp_schedule_single_event( time() , 'jetpack_sync_update_multisite_cron', $include_users );
+				wp_schedule_single_event( time() , 'jetpack_full_sync_on_multisite_jetpack_upgrade_cron', $include_users );
 			}
 		} else {
 			self::do_full_sync( $initial_sync_config );
@@ -208,31 +208,28 @@ class Jetpack_Sync_Actions {
 		);
 	}
 	
-	static function update_multisite_full_sync( $include_users = false ) {
+	static function full_sync_on_multisite_jetpack_upgrade( $include_users = false ) {
 		global $wpdb;
 		$initial_sync_config = self::get_update_full_sync_config();
 		if ( $include_users ) {
 			$initial_sync_config['users'] = 'initial';
 		}
 
-		$offset = 0;
-		$batch = 500;
-		$continue = true;
+		$max_blog_id = 0;
+		$batch_size = 500;
 
-		while( $continue ) {
+		while( true ) {
+			$site_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = {$wpdb->siteid} AND spam = '0' AND deleted = '0' AND archived = '0' AND blog_id > {$max_blog_id} ORDER BY blog_id ASC LIMIT {$batch_size}" );
+			if ( ! $site_ids ) {
+				break;
+			}
 
-			$site_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY blog_id DESC LIMIT {$offset}, {$batch}" );
-		
 			foreach ( (array) $site_ids as $site_id ) {
 				switch_to_blog( $site_id );
 				self::do_full_sync( $initial_sync_config );
 				restore_current_blog();
 			}
-
-			if ( count( $site_ids ) !== $batch ) {
-				break;
-			}
-			$offset   = $offset + $batch;
+			$max_blog_id = end( $site_ids );
 		}
 	}
 
@@ -240,7 +237,6 @@ class Jetpack_Sync_Actions {
 		if ( ! self::sync_allowed() ) {
 			return false;
 		}
-
 		self::initialize_listener();
 		Jetpack_Sync_Modules::get_module( 'full-sync' )->start( $modules );
 
