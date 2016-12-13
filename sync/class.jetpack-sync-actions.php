@@ -216,11 +216,15 @@ class Jetpack_Sync_Actions {
 			$initial_sync_config['users'] = 'initial';
 		}
 
+		$offset = 0;
 		$batch = 500;
 		$continue = true;
 
 		while( $continue ) {
-			$site_ids = $wpdb->get_results( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY registered DESC LIMIT {$offset}, {$batch}", ARRAY_A );
+
+			$site_ids = $wpdb->get_col( "SELECT blog_id FROM {$wpdb->blogs} WHERE site_id = '{$wpdb->siteid}' AND spam = '0' AND deleted = '0' AND archived = '0' ORDER BY registered DESC LIMIT {$offset}, {$batch}" );
+			error_log( print_r( $site_ids ,1 ));
+
 			foreach ( (array) $site_ids as $site_id ) {
 				switch_to_blog( $site_id );
 				if ( self::sync_allowed() ) {
