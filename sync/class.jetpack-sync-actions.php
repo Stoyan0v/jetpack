@@ -192,7 +192,7 @@ class Jetpack_Sync_Actions {
 		if ( is_multisite()  ) {
 			// stagger initial syncs for multisite blogs so they don't all pile on top of each other
 			if ( is_main_site() ) {
-				wp_schedule_single_event( time() , 'jetpack_full_sync_on_multisite_jetpack_upgrade_cron', $include_users );
+				wp_schedule_single_event( time() , 'jetpack_full_sync_on_multisite_jetpack_upgrade_cron', array( $include_users ) );
 			}
 		} else {
 			self::do_full_sync( $initial_sync_config );
