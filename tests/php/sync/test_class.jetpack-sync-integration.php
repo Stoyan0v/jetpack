@@ -151,6 +151,7 @@ class WP_Test_Jetpack_Sync_Integration extends WP_Test_Jetpack_Sync_Base {
 		if ( ! is_multisite() ) {
 			$this->markTestSkipped( 'Not compatible with multisite mode' );
 		}
+		$this->setSyncClientDefaults();
 
 		$full_config = array(
 			'constants' => 1,
@@ -158,26 +159,28 @@ class WP_Test_Jetpack_Sync_Integration extends WP_Test_Jetpack_Sync_Base {
             'options' => 1,
             'network_options' => 1
 		);
+
 		add_action( 'jetpack_full_sync_end', array( $this, 'sleep_one_sec') );
 
 		$blog_id = $this->factory->blog->create();
 		$this->server_replica_storage->reset();
+
 		$full_sync = $this->full_sync = Jetpack_Sync_Modules::get_module( 'full-sync' );
 		Jetpack_Sync_Actions::full_sync_on_multisite_jetpack_upgrade();
+		remove_action( 'jetpack_full_sync_end', array( $this, 'sleep_one_sec') );
 
 		$full_sync_status = $full_sync->get_status();
-		$this->assertEquals( $full_config, $full_sync_status['config'] );
-		$this->assertEquals( $full_config, $full_sync_status['queue'] );
-		$this->assertEquals( $full_config, $full_sync_status['total'] );
+		$this->assertEquals( $full_config, $full_sync_status['config'], 'config is not equal on main blog' );
+		$this->assertEquals( $full_config, $full_sync_status['total'], 'total is not equal on main blog' );
 
 		switch_to_blog( $blog_id );
+
 		$full_sync_status_blog_2 = $full_sync->get_status();
+
 		$this->assertNotEquals( $full_sync_status['started'], $full_sync_status_blog_2['started'] );
 		$this->assertNotEquals( $full_sync_status['queue_finished'], $full_sync_status_blog_2['queue_finished'] );
-		$this->assertEquals( $full_config, $full_sync_status_blog_2['config'] );
-		$this->assertEquals( $full_config, $full_sync_status_blog_2['queue'] );
-		$this->assertEquals( $full_config, $full_sync_status_blog_2['total'] );
-
+		$this->assertEquals( $full_config, $full_sync_status_blog_2['config'], 'config is not equal on secondary blog' );
+		$this->assertEquals( $full_config, $full_sync_status_blog_2['total'], 'total is not equal on secondary blog');
 	}
 
 	function sleep_one_sec() {
