@@ -39,6 +39,16 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		);
 
 		/**
+		 * Default color schemes.
+		 *
+		 * @var array
+		 */
+		private $color_schemes = array(
+			'light',
+			'dark',
+		);
+
+		/**
 		 * Constructor
 		 */
 		function __construct() {
@@ -79,6 +89,7 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 				'title'        => __( 'EU Cookie Law Banner', 'jetpack' ),
 				'hide'         => $this->hide_options[0],
 				'text-type'    => $this->text_options[0],
+				'color-scheme' => $this->color_schemes[0],
 				'hide-timeout' => 30,
 				'banner-text'  => '',
 			);
@@ -125,8 +136,9 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 			$instance['banner-text'] = wp_kses( $new_instance['banner-text'], array() );
 			$instance['hide-timeout'] = (int) $new_instance['hide-timeout'];
 
-			$instance['hide']      = $this->filter_value( $new_instance['hide'], $this->hide_options );
-			$instance['text-type'] = $this->filter_value( $new_instance['text-type'], $this->text_options );
+			$instance['hide']         = $this->filter_value( $new_instance['hide'], $this->hide_options );
+			$instance['text-type']    = $this->filter_value( $new_instance['text-type'], $this->text_options );
+			$instance['color-scheme'] = $this->filter_value( $new_instance['color-scheme'], $this->color_schemes );
 
 			if ( $instance['hide-timeout'] < 3 ) {
 				$instance['hide-timeout'] = 3;
@@ -191,6 +203,22 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 				</ul>
 
 				<textarea class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'banner-text' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'banner-text' ) ); ?>" placeholder="<?php printf( esc_attr__( '%s', 'jetpack' ), $this->text ); ?>"><?php echo esc_textarea( $instance['banner-text'] ); ?></textarea>
+			</p>
+
+			<p>
+				<label><?php esc_html_e( 'Color Scheme:', 'jetpack' ); ?></label>
+				<ul>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'color-scheme' ); ?>-light" name="<?php echo $this->get_field_name( 'color-scheme' ); ?>" type="radio" value="light" <?php checked( 'light', $instance['color-scheme'] ); ?> /> <?php esc_html_e( 'Light', 'jetpack' ); ?>
+						</label>
+					</li>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'color-scheme' ); ?>-dark" name="<?php echo $this->get_field_name( 'color-scheme' ); ?>" type="radio" value="dark" <?php checked( 'dark', $instance['color-scheme'] ); ?> /> <?php esc_html_e( 'Dark', 'jetpack' ); ?>
+						</label>
+					</li>
+				</ul>
 			</p>
 			<?php
 		}
