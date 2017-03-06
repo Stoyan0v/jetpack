@@ -10,6 +10,33 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 	add_action( 'widgets_init', 'jetpack_eu_cookie_law_banner_init' );
 
 	class Jetpack_EU_Cookie_Law_Banner_Widget extends WP_Widget {
+		/**
+		 * Default banner text.
+		 *
+		 * @var string
+		 */
+		private $text = 'Display your location, hours, and contact information.';
+
+		/**
+		 * Default hide options.
+		 *
+		 * @var array
+		 */
+		private $hide_options = array(
+			'button',
+			'scroll',
+			'time',
+		);
+
+		/**
+		 * Default text options.
+		 *
+		 * @var array
+		 */
+		private $text_options = array(
+			'default',
+			'custom',
+		);
 
 		/**
 		 * Constructor
@@ -50,8 +77,10 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		public function defaults() {
 			return array(
 				'title'        => __( 'EU Cookie Law Banner', 'jetpack' ),
-				'hide'         => 'button',
+				'hide'         => $this->hide_options[0],
+				'text-type'    => $this->text_options[0],
 				'hide-timeout' => 30,
+				'banner-text'  => '',
 			);
 		}
 
@@ -91,16 +120,14 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		 * @return array
 		 */
 		function update( $new_instance, $old_instance ) {
-			$instance          = array();
-			$instance['title'] = wp_kses( $new_instance['title'], array() );
-
-			if ( isset( $new_instance['hide'] ) && in_array( $new_instance['hide'], array( 'button', 'scroll', 'time'  ) ) ) {
-				$instance['hide'] = $new_instance['hide'];
-			} else {
-				$instance['hide'] = 'button';
-			}
-
+			$instance                = array();
+			$instance['title']       = wp_kses( $new_instance['title'], array() );
+			$instance['banner-text'] = wp_kses( $new_instance['banner-text'], array() );
 			$instance['hide-timeout'] = (int) $new_instance['hide-timeout'];
+
+			$instance['hide']      = $this->filter_value( $new_instance['hide'], $this->hide_options );
+			$instance['text-type'] = $this->filter_value( $new_instance['text-type'], $this->text_options );
+
 			if ( $instance['hide-timeout'] < 3 ) {
 				$instance['hide-timeout'] = 3;
 			}
@@ -120,9 +147,12 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 			$instance = wp_parse_args( $instance, $this->defaults() );
 			?>
 			<p>
-				<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>"><?php esc_html_e( 'Title:', 'jetpack' ); ?></label>
+				<label for="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>">
+					<?php esc_html_e( 'Title:', 'jetpack' ); ?>
+				</label>
 				<input class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'title' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'title' ) ); ?>" type="text" value="<?php echo esc_attr( $instance['title'] ); ?>" />
 			</p>
+
 			<p>
 				<label><?php esc_html_e( 'Hide the banner:', 'jetpack' ); ?></label>
 				<ul>
@@ -144,7 +174,43 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 					</li>
 				</ul>
 			</p>
+
+			<p>
+				<label><?php esc_html_e( 'Banner Text:', 'jetpack' ); ?></label>
+				<ul>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'text-type' ); ?>-default" name="<?php echo $this->get_field_name( 'text-type' ); ?>" type="radio" value="default" <?php checked( 'default', $instance['text-type'] ); ?> /> <?php esc_html_e( 'Default', 'jetpack' ); ?>
+						</label>
+					</li>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'text-type' ); ?>-custom" name="<?php echo $this->get_field_name( 'text-type' ); ?>" type="radio" value="custom" <?php checked( 'custom', $instance['text-type'] ); ?> /> <?php esc_html_e( 'Custom:', 'jetpack' ); ?>
+						</label>
+					</li>
+				</ul>
+
+				<textarea class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'banner-text' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'banner-text' ) ); ?>" placeholder="<?php printf( esc_attr__( '%s', 'jetpack' ), $this->text ); ?>"><?php echo esc_textarea( $instance['banner-text'] ); ?></textarea>
+			</p>
 			<?php
+		}
+
+		/**
+		 * Check if the value is allowed and not empty.
+		 *
+		 * @param text  $value   Value to check.
+		 * @param array $allowed Array of allowed values.
+		 *
+		 * @return text $value if pass the check or first value from allowed values
+		 */
+		function filter_value( $value, $allowed = array() ) {
+			$allowed = (array) $allowed;
+
+			if ( empty( $value ) || ( ! empty( $allowed ) && ! in_array( $value, $allowed ) ) ) {
+				$value = $allowed[0];
+			}
+
+			return $value;
 		}
 
 	}
