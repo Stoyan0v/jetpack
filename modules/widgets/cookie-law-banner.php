@@ -149,17 +149,31 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		 * @return array
 		 */
 		function update( $new_instance, $old_instance ) {
-			$instance                      = array();
+			$instance = array();
+
+			/**
+			 * Validate integer fields.
+			 */
+			$instance['hide-timeout'] = (int) $new_instance['hide-timeout'];
+
+			/**
+			 * Validate text fields.
+			 */
 			$instance['title']             = wp_kses( $new_instance['title'], array() );
 			$instance['banner-text']       = wp_kses( $new_instance['banner-text'], array() );
 			$instance['policy-url-custom'] = wp_kses( $new_instance['policy-url-custom'], array() );
-			$instance['hide-timeout']      = (int) $new_instance['hide-timeout'];
 
+			/**
+			 * Validate radio fields.
+			 */
 			$instance['hide']         = $this->filter_value( $new_instance['hide'], $this->hide_options );
 			$instance['text-type']    = $this->filter_value( $new_instance['text-type'], $this->text_options );
 			$instance['color-scheme'] = $this->filter_value( $new_instance['color-scheme'], $this->color_schemes );
 			$instance['policy-url']   = $this->filter_value( $new_instance['policy-url'], $this->url_options );
 
+			/**
+			 * Additional validations.
+			 */
 			if ( $instance['hide-timeout'] < 3 ) {
 				$instance['hide-timeout'] = 3;
 			}
