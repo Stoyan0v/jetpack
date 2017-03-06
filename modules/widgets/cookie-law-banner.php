@@ -18,6 +18,13 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		private $text = 'Display your location, hours, and contact information.';
 
 		/**
+		 * Default policy URL.
+		 *
+		 * @var string
+		 */
+		private $policy_url = 'https://jetpack.com/support/cookies/';
+
+		/**
 		 * Default hide options.
 		 *
 		 * @var array
@@ -48,6 +55,15 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 			'dark',
 		);
 
+		/**
+		 * Default policy URL options.
+		 *
+		 * @var array
+		 */
+		private $url_options = array(
+			'default',
+			'custom',
+		);
 		/**
 		 * Constructor
 		 */
@@ -86,12 +102,14 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		 */
 		public function defaults() {
 			return array(
-				'title'        => __( 'EU Cookie Law Banner', 'jetpack' ),
-				'hide'         => $this->hide_options[0],
-				'text-type'    => $this->text_options[0],
-				'color-scheme' => $this->color_schemes[0],
-				'hide-timeout' => 30,
-				'banner-text'  => '',
+				'title'             => __( 'EU Cookie Law Banner', 'jetpack' ),
+				'hide'              => $this->hide_options[0],
+				'text-type'         => $this->text_options[0],
+				'color-scheme'      => $this->color_schemes[0],
+				'policy-url'        => $this->url_options[0],
+				'policy-url-custom' => '',
+				'banner-text'       => '',
+				'hide-timeout'      => 30,
 			);
 		}
 
@@ -131,17 +149,23 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 		 * @return array
 		 */
 		function update( $new_instance, $old_instance ) {
-			$instance                = array();
-			$instance['title']       = wp_kses( $new_instance['title'], array() );
-			$instance['banner-text'] = wp_kses( $new_instance['banner-text'], array() );
-			$instance['hide-timeout'] = (int) $new_instance['hide-timeout'];
+			$instance                      = array();
+			$instance['title']             = wp_kses( $new_instance['title'], array() );
+			$instance['banner-text']       = wp_kses( $new_instance['banner-text'], array() );
+			$instance['policy-url-custom'] = wp_kses( $new_instance['policy-url-custom'], array() );
+			$instance['hide-timeout']      = (int) $new_instance['hide-timeout'];
 
 			$instance['hide']         = $this->filter_value( $new_instance['hide'], $this->hide_options );
 			$instance['text-type']    = $this->filter_value( $new_instance['text-type'], $this->text_options );
 			$instance['color-scheme'] = $this->filter_value( $new_instance['color-scheme'], $this->color_schemes );
+			$instance['policy-url']   = $this->filter_value( $new_instance['policy-url'], $this->url_options );
 
 			if ( $instance['hide-timeout'] < 3 ) {
 				$instance['hide-timeout'] = 3;
+			}
+
+			if ( $instance['policy-url'] === 'custom' && empty( $instance['policy-url-custom'] ) ) {
+				$instance['policy-url'] = 'default';
 			}
 
 			return $instance;
@@ -187,6 +211,8 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 				</ul>
 			</p>
 
+			<hr>
+
 			<p>
 				<label><?php esc_html_e( 'Banner Text:', 'jetpack' ); ?></label>
 				<ul>
@@ -205,6 +231,8 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 				<textarea class="widefat" id="<?php echo esc_attr( $this->get_field_id( 'banner-text' ) ); ?>" name="<?php echo esc_attr( $this->get_field_name( 'banner-text' ) ); ?>" placeholder="<?php printf( esc_attr__( '%s', 'jetpack' ), $this->text ); ?>"><?php echo esc_textarea( $instance['banner-text'] ); ?></textarea>
 			</p>
 
+			<hr>
+
 			<p>
 				<label><?php esc_html_e( 'Color Scheme:', 'jetpack' ); ?></label>
 				<ul>
@@ -220,6 +248,27 @@ if ( ! class_exists( 'Jetpack_EU_Cookie_Law_Banner_Widget' ) ) {
 					</li>
 				</ul>
 			</p>
+
+			<hr>
+
+			<p>
+				<label><?php esc_html_e( 'Policy URL:', 'jetpack' ); ?></label>
+				<ul>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'policy-url' ); ?>-default" name="<?php echo $this->get_field_name( 'policy-url' ); ?>" type="radio" value="default" <?php checked( 'default', $instance['policy-url'] ); ?> /> <?php esc_html_e( 'Default', 'jetpack' ); ?>
+						</label>
+					</li>
+					<li>
+						<label>
+							<input id="<?php echo $this->get_field_id( 'policy-url' ); ?>-custom" name="<?php echo $this->get_field_name( 'policy-url' ); ?>" type="radio" value="custom" <?php checked( 'custom', $instance['policy-url'] ); ?> /> <?php esc_html_e( 'Custom:', 'jetpack' ); ?>
+						</label>
+					</li>
+				</ul>
+
+				<input class="widefat" id="<?php echo $this->get_field_id( 'policy-url-custom' ); ?>" name="<?php echo $this->get_field_name( 'policy-url-custom' ); ?>" type="text" value="<?php echo esc_attr( $instance['policy-url-custom'] ); ?>" placeholder="<?php echo esc_attr( $this->policy_url ); ?>">
+			</p>
+
 			<?php
 		}
 
