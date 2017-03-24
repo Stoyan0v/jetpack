@@ -43,31 +43,41 @@ if ( !class_exists( 'Jetpack_RSS_Links_Widget' ) ) {
 		}
 
 		function widget( $args, $instance ) {
-			$instance = wp_parse_args( (array) $instance, $this->defaults() );
+			$instance = wp_parse_args( $instance, $this->defaults() );
 
-			extract( $args );
-
-			/** This filter is documented in core/src/wp-includes/default-widgets.php */
+			/** This filter is documented in wp-includes/widgets/class-wp-widget-pages.php */
 			$title = apply_filters( 'widget_title', $instance['title'] );
-			echo $before_widget;
 
-			if ( $title )
-				echo $before_title . stripslashes( $title ) . $after_title;
+			echo $args['before_widget'];
 
-			if ( 'text' == $instance['format'] ) echo '<ul>';
-
-			if ( 'posts' == $instance['display'] ) {
-				$this->_rss_link( 'posts', $instance);
-			} elseif ( 'comments' == $instance['display'] ) {
-				$this->_rss_link( 'comments', $instance);
-			} elseif ( 'posts-comments' == $instance['display'] ) {
-				$this->_rss_link( 'posts', $instance );
-				$this->_rss_link( 'comments', $instance );
+			if ( ! empty( $title ) ) {
+				echo $args['before_title'] . esc_html( $title ) . $args['after_title'];
 			}
 
-			if ( 'text' == $instance['format'] ) echo '</ul>';
+			if ( 'text' == $instance['format'] ) {
+				echo '<ul>';
+			}
 
-			echo "\n" . $after_widget;
+			switch ( $instance['display'] ) {
+				case 'posts':
+					$this->_rss_link( 'posts', $instance);
+					break;
+
+				case 'comments':
+					$this->_rss_link( 'comments', $instance);
+					break;
+
+				default:
+					$this->_rss_link( 'posts', $instance );
+					$this->_rss_link( 'comments', $instance );
+					break;
+			}
+
+			if ( 'text' == $instance['format'] ) {
+				echo '</ul>';
+			}
+
+			echo $args['after_widget'];
 
 			/** This action is documented in modules/widgets/gravatar-profile.php */
 			do_action( 'jetpack_stats_extra', 'widget_view', 'rss-links' );
