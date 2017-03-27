@@ -457,7 +457,7 @@ class Jetpack_Subscriptions {
 				$r[] = new Jetpack_Error( 'active' );
 				continue 2;
 			case 'pending' :
-				$r[] = true;
+				$r[] = new Jetpack_Error( 'pending' );
 				continue 2;
 			default :
 				$r[] = new Jetpack_Error( 'unknown_status', (string) $response[0]['status'] );
@@ -534,8 +534,10 @@ class Jetpack_Subscriptions {
 				$result = 'opted_out';
 				break;
 			case 'active':
-			case 'pending':
 				$result = 'already';
+				break;
+			case 'pending':
+				$result = 'pending';
 				break;
 			default:
 				$result = 'error';
@@ -830,7 +832,15 @@ class Jetpack_Subscriptions_Widget extends WP_Widget {
 						); ?>
 				<?php break;
 				case 'already' : ?>
-					<p class="error"><?php esc_html_e( 'You have already subscribed to this site. Please check your inbox.', 'jetpack' ); ?></p>
+					<p class="error"><?php esc_html_e( 'You have already subscribed to this site.', 'jetpack' ); ?></p>
+				<?php break;
+				case 'pending' : ?>
+					<p class="error">
+						<?php printf( __( 'Your subscription is pending. Please check your inbox or visit <a href="%1$s" title="%2$s" target="_blank">subscribe.wordpress.com</a> to confirm it.', 'jetpack' ),
+							'https://subscribe.wordpress.com/',
+							__( 'Manage your email preferences.', 'jetpack' )
+						); ?>
+					</p>
 				<?php break;
 				case 'success' : ?>
 					<div class="success"><?php echo wpautop( str_replace( '[total-subscribers]', number_format_i18n( $subscribers_total['value'] ), $success_message ) ); ?></div>
